@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [inputValue, setInputValue] = useState('');
   const [result, setResult] = useState('');
+  const [parsedResult, setParsedResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -14,6 +15,7 @@ function App() {
     e.preventDefault();
     setLoading(true);
     setResult('');
+    setParsedResult(null);
     // console.log("FETCHING")
     try {
       const res = await fetch('http://localhost:3000/query', {
@@ -31,6 +33,11 @@ function App() {
 
       const data = await res.json();
       setResult(data.result || data.error || 'No response received.');
+      try {
+        setParsedResult(JSON.parse(data.result));
+      } catch (e) {
+        console.error('Failed to parse result:', e);
+      }
     } catch (err) {
       console.error('Fetch error:', err);
       setResult('Failed to get response from server.');
@@ -38,6 +45,7 @@ function App() {
       setLoading(false);
     }
     console.log(result)
+    console.log(parsedResult)
   };
 
   return (
@@ -77,16 +85,49 @@ function App() {
         </div>
         </div>
         
+        <div className='flex flex-col w-1/2 h-full gap-4 justify-center items-center'>
 
-        <div className="flex flex-col gap-4 w-5/6 sm:w-full max-w-[500px] p-6 h-1/3 sm:h-1/2 border border-[#f4dcd5] rounded-3xl bg-white">
+        <div className="flex flex-col gap-4 w-5/6 sm:w-full max-w-[500px] p-6 h-1/3 sm:h-1/4 border border-[#f4dcd5] rounded-3xl bg-white">
         <h1 className="text-2xl font-bold mb-2 text-[#c24b29]">Results: </h1>
+          <div className="w-full h-full whitespace-pre-wrap overflow-y-scroll">
+
+            <div className="w-full h-fit whitespace-pre-wrap">
+              {parsedResult ? (
+                <div>
+                  {parsedResult.resilience_score && <div>Score: {parsedResult.resilience_score}</div>}
+                  {parsedResult.performance_timeline   && <div className="w-full break-words whitespace-pre-wrap">Performance Timeline: {JSON.stringify(parsedResult.performance_timeline)}</div>}
+                 
+                </div>
+              ) : (
+                result
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 w-5/6 sm:w-full max-w-[500px] p-6 h-1/3 sm:h-1/4 border border-[#f4dcd5] rounded-3xl bg-white">
+        <h1 className="text-2xl font-bold mb-2 text-[#c24b29]">Recommendation: </h1>
           <div className="w-full h-full border-y-2 whitespace-pre-wrap overflow-y-scroll">
 
             <div className="w-full h-fit whitespace-pre-wrap">
-              {result}
+              {parsedResult ? (
+                <div>
+                  {parsedResult.recommendations && (
+                    <div >
+                      {parsedResult.recommendations.map((rec: string, index: number) => (
+                        <h1 className="text-wrap" key={index}>{rec}</h1>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                result
+              )}
             </div>
           </div>
-      </div>
+        </div>
+        
+        </div>
     </div>
     </>
   )
